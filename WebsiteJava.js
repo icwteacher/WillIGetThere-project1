@@ -29,13 +29,13 @@ async function fetchWindData(latitude, longitude) {
 
         // Toon resultaten
         document.getElementById("windResult").innerHTML = 
-            `<p><strong>Wind Speed:</strong> ${windSpeed} km/h</p>
-             <p><strong>Wind Direction:</strong> ${windDirection}°</p>
-             <p><strong>Latitude:</strong> ${latitude}°</p>
-             <p><strong>Longitude:</strong> ${longitude}°</p>`;
+            `<p><strong>Wind Snelheid:</strong> ${windSpeed} km/h</p>
+             <p><strong>Wind Richting:</strong> ${windDirection}°</p>
+             <p><strong>Breedtegraad:</strong> ${latitude}°</p>
+             <p><strong>Lengtegraad:</strong> ${longitude}°</p>`;
         document.getElementById("windResult").style.display = "block";
     } catch (error) {
-        console.error("Error fetching wind data:", error);
+        console.error("Error met het ophalen van gegevens:", error);
     }
 }
 
@@ -56,4 +56,7 @@ async function getWindDataForStartLocation() {
     } else {
         alert("Kon geen coördinaten vinden voor de startlocatie.");
     }
+}
+function EnqueteInvullen(){
+    document.writeln('<label for="batterij">Batterij op einde (in %):</label><input type="number"><br><button onclick="Indienen()">Indienen</button>')
 }
