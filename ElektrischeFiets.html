@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="WebsiteJava.js" defer></script>
+    <title>Wind Speed & Direction Checker</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        input, button { margin: 10px; padding: 8px; }
+        .result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; display: inline-block; }
+    </style>
+</head>
+<body>
+    <h1>Wind Speed & Direction Checker</h1>
+
+    <!-- Extra invoervelden voor coördinatenberekening -->
+    <label>Gemeente bij start:</label>
+    <input type="text" id="GemeenteStart">
+    <label>Straat bij start:</label>
+    <input type="text" id="StraatStart">
+    <br>
+    <label>Gemeente bij einde:</label>
+    <input type="text" id="GemeenteStart">
+    <label>Straat bij einde:</label>
+    <input type="text" id="StraatStart">
+    <br><br>
+    <button onclick="getWindDataForStartLocation()">Get Wind Data from Start Location</button>
+
+    <div id="windResult" class="result" style="display: none;"></div>
+</body>
+</html>
