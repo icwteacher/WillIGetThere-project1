@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aanmeldformulier</title>
+    <script>
+        function validatePasswords(event) {
+            const password = document.getElementById('wachtwoord').value;
+            const confirmPassword = document.getElementById('herhaalWachtwoord').value;
+            const errorMessage = document.getElementById('error-message');
+
+            if (password !== confirmPassword) {
+                event.preventDefault(); // Voorkomt het verzenden van het formulier
+                errorMessage.textContent = 'De wachtwoorden komen niet overeen.';
+                errorMessage.style.color = 'red';
+            } else {
+                errorMessage.textContent = ''; // Verwijdert de foutmelding als alles klopt
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Aanmeldformulier</h1>
+    <form action="register.php" method="post" onsubmit="validatePasswords(event)">
+        <label for="naam">Naam:</label><br>
+        <input type="text" id="naam" name="naam" required><br><br>
+
+        <label for="email">E-mailadres:</label><br>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <label for="telefoon">Telefoonnummer:</label><br>
+        <input type="tel" id="telefoon" name="telefoon"><br><br>
+
+        <label for="gebruikersnaam">Gebruikersnaam:</label><br>
+        <input type="text" id="gebruikersnaam" name="gebruikersnaam" required><br><br>
+
+        <label for="wachtwoord">Wachtwoord:</label><br>
+        <input type="password" id="wachtwoord" name="wachtwoord" required><br><br>
+
+        <label for="herhaalWachtwoord">Herhaal wachtwoord:</label><br>
+        <input type="password" id="herhaalWachtwoord" name="herhaalWachtwoord" required><br><br>
+
+        <span id="error-message"></span><br><br>
+
+        <button type="submit">Aanmelden</button>
+    </form>
+</body>
+</html>
