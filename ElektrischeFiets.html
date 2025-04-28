@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="WebsiteJava.js" defer></script>
+  <title>Will I get there</title>
+  <style>
+    p {
+      font-size: 14px;
+      margin-top: -8px;
+    }
+
+    select, textarea, input {
+      background-color: rgb(255, 239, 226);
+      color: rgb(220, 125, 47);
+      border: 1px solid rgb(255, 165, 91);
+      border-radius: 5px;
+      box-sizing: border-box;
+      transition: 0.5s;
+      outline: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border: 3px solid rgb(220, 125, 47);
+    }
+
+    .hoofding {
+      background-color: rgb(255, 165, 91);
+      padding: 20px;
+      position: relative;
+      margin-left: -10px;
+    }
+
+    h1 {
+      margin: 0;
+      color: white;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      margin-left: 10px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin: 20px;
+    }
+
+    .image-container {
+      flex: 0 0 40%;
+    }
+
+    .image-container img {
+      width: 100%;
+      height: auto;
+    }
+
+    .text-container {
+      flex: 0 0 58%;
+    }
+
+    input, button {
+      margin: 10px;
+      padding: 8px;
+    }
+
+    button, .formulier {
+      background-color: rgb(255, 165, 91);
+      border: none;
+      cursor: pointer;
+      color: white;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      display: inline-block;
+    }
+
+    .uitloggen {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 85px;
+      padding: 8px;
+      background-color: white;
+      border: none;
+      cursor: pointer;
+      color: rgb(255, 165, 91);
+      font-weight: bold;
+      border-radius: 5px;
+    }
+
+    .input-row {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      flex: 1 1 45%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feedback-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  flex-wrap: wrap; /* Zorgt ervoor dat ze breken als het MOET */
+  margin: 20px 0;
+}
+
+.feedback-row label {
+  margin: 0;
+  font-size: 16px;
+}
+
+.feedback {
+  background-color: rgb(255, 165, 91);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 5px;
+  flex-shrink: 0; /* Hierdoor krimpt de knop niet */
+}
+
+
+    /* Mobiel */
+    @media (max-width: 600px) {
+      h1 {
+        width: 70%;
+        font-size: 24px;
+      }
+
+      .container {
+        flex-direction: column;
+      }
+
+      .image-container, .text-container {
+        flex: 0 0 100%;
+        width: 100%;
+      }
+
+      .text-container {
+        margin-top: 20px;
+      }
+
+      input, button {
+        display: block;
+        width: 90%;
+        margin: 10px auto;
+      }
+
+      label {
+        display: block;
+        margin: 10px auto 0 auto;
+        text-align: left;
+        width: 90%;
+      }
+
+      .input-row {
+        flex-direction: column;
+      }
+
+      .feedback-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: right;
+        margin: 10px;
+      }
+
+      .feedback {
+        width: auto;
+        margin: 0px 0 0 0;
+        position: absolute; /* BELANGRIJK: niet position absolute */
+      }
+    }
+
+    /* Tablet en groter */
+    @media (min-width: 601px) {
+      h1 {
+        width: 80%;
+        font-size: 32px;
+      }
+
+      .container {
+        flex-direction: row;
+      }
+
+      .image-container {
+        flex: 0 0 48%;
+      }
+
+      .text-container {
+        flex: 0 0 50%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hoofding">
+    <h1>Kan je batterij het aan? Ik niet.</h1>
+    <button class="uitloggen">Uitloggen</button>
+  </div>
+
+  <div class="container">
+    <div class="image-container">
+      <img src="foto.png" alt="route">
+    </div>
+
+    <div class="text-container">
+      <div class="input-group">
+        <label for="batterij">Batterij bij vertrek (in %):<sup>*</sup></label> 
+        <input type="number" name="batterijProcent" id="batterijProcent" min="0" max="100" required>
+      </div><br>
+
+      <div class="input-row">
+        <div class="input-group">
+          <label for="gemeenteStart">Gemeente bij vertrek:<sup>*</sup></label>
+          <input type="text" id="gemeenteStart" required>
+        </div>
+        <div class="input-group">
+          <label for="straatStart">Straat bij vertrek:</label>
+          <input type="text" id="straatStart">
+        </div>
+      </div>
+      <br>
+
+      <div class="input-row">
+        <div class="input-group">
+          <label for="gemeenteEinde">Gemeente bij aankomst:<sup>*</sup></label>
+          <input type="text" id="gemeenteEinde" required>
+        </div>
+        <div class="input-group">
+          <label for="straatEinde">Straat bij aankomst:</label>
+          <input type="text" id="straatEinde">
+        </div>
+      </div>
+      <p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
+
+      <br><br>
+
+      <button onclick="getWindDataForStartLocation()">Bereken de gegevens</button>
+
+      <div id="windResult" class="result" style="display: none;"></div>
+    </div>
+  </div>
+<br><br>
+  <div class="feedback-row">
+    <label>Ben je aangekomen? Geef je feedback!</label>
+    <button onclick="EnqueteInvullen()" class="feedback">Feedback</button>
+  </div><br><br>
+</body>
+</html>
