@@ -1,96 +1,191 @@
-// Haalt coördinaten op van een opgegeven gemeente en straat via de OpenStreetMap API
+let map = L.map('map').setView([51.2194475, 4.4024643], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+let routeLayer;
+
+async function getRouteAndFiveCoordinates() {
+  const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
+  const straatStart = document.getElementById("straatStart").value.trim();
+  const gemeenteEnd = document.getElementById("gemeenteEinde").value.trim();
+  const straatEnd = document.getElementById("straatEinde").value.trim();
+
+  if (!gemeenteStart || !gemeenteEnd) {
+    alert("Vul zowel de start- als eindlocatie in.");
+    return;
+  }
+
+  const startCoords = await getCoordinates(gemeenteStart, straatStart);
+  const endCoords = await getCoordinates(gemeenteEnd, straatEnd);
+
+  if (startCoords && endCoords) {
+    const route = await getRoute(startCoords, endCoords);
+    if (route) {
+      const fiveCoords = getFiveCoordinates(route);
+      let output = "<p><strong>Coördinaten langs de route:</strong></p>";
+
+      for (let i = 0; i < fiveCoords.length; i++) {
+        const coord = fiveCoords[i];
+        const lat = coord[1];
+        const lon = coord[0];
+
+        const windData = await fetchWindDataPerCoord(lat, lon);
+
+        if (windData) {
+          output += `<p><strong>Coördinaat ${i + 1}:</strong> Lat: ${lat}, Lon: ${lon}<br>Windsnelheid: ${windData.windSpeed} km/h, Windrichting: ${windData.windDirection}°</p>`;
+        } else {
+          output += `<p><strong>Coördinaat ${i + 1}:</strong> Geen winddata beschikbaar</p>`;
+        }
+        document.getElementById("result").style.display = "block";
+      }
+
+      document.getElementById('result').innerHTML = output;
+      drawRoute(startCoords, endCoords);
+      fetchWindDataStartEnd(startCoords, endCoords);
+    }
+  } else {
+    alert("Kon geen coördinaten vinden voor een van de locaties.");
+  }
+}
+
 async function getCoordinates(gemeente, straat) {
-    let query = "";
-
-    if (straat) {
-        query = `${straat}, ${gemeente}, Belgium`;
+  try {
+    const query = straat ? `${straat}, ${gemeente}` : gemeente;
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    if (data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon),
+        display_name: data[0].display_name
+      };
     } else {
-        query = `${gemeente}, Belgium`;
+      return null;
     }
-
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        return data.length > 0 ? { 
-            lat: data[0].lat, 
-            lon: data[0].lon, 
-            display_name: data[0].display_name 
-        } : null;
-    } catch (error) {
-        console.error("Error fetching coordinates:", error);
-        return null;
-    }
+  } catch (error) {
+    console.error("Fout bij ophalen coördinaten:", error);
+    return null;
+  }
 }
 
-// Haalt windgegevens op voor een opgegeven breedte- en lengtegraad
-async function fetchWindData(latitude, longitude, locatieNaam) {
-    try {
-        const weatherResponse = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=windspeed_10m,winddirection_10m&timezone=auto`
-        );
-        const weatherData = await weatherResponse.json();
-
-        // Gebruik de meest recente gegevens
-        const latestIndex = weatherData.hourly.time.length - 1;
-        const windSpeed = weatherData.hourly.windspeed_10m[latestIndex];
-        const windDirection = weatherData.hourly.winddirection_10m[latestIndex];
-
-        // Toon resultaten
-        document.getElementById("windResult").innerHTML = 
-            `<p><strong>Wind Snelheid:</strong> ${windSpeed} km/h</p>
-             <p><strong>Wind Richting:</strong> ${windDirection}°</p>
-             <p><strong>Breedtegraad:</strong> ${latitude}°</p>
-             <p><strong>Lengtegraad:</strong> ${longitude}°</p>`;
-        document.getElementById("windResult").style.display = "block";
-    } catch (error) {
-        console.error("Error met het ophalen van gegevens:", error);
-    }
-}
-
-// Leest invoerwaarden, haalt coördinaten van GemeenteStart & StraatStart op en gebruikt ze voor winddata
-async function getWindDataForStartLocation() {
-    const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
-    const straatStart = document.getElementById("straatStart").value.trim();
-
-    if (!gemeenteStart) {
-        alert("Vul minstens de gemeente in voor de startlocatie.");
-        return;
-    }
-
-    const startCoords = await getCoordinates(gemeenteStart, straatStart);
-
-    if (startCoords) {
-        fetchWindData(startCoords.lat, startCoords.lon, startCoords.display_name);
+async function getRoute(startCoords, endCoords) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${endCoords.lon},${endCoords.lat}?overview=full&geometries=geojson`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.code === "Ok") {
+      return data.routes[0].geometry.coordinates;
     } else {
-        alert("Kon geen coördinaten vinden voor de opgegeven locatie.");
+      return null;
     }
+  } catch (error) {
+    console.error("Fout bij ophalen route:", error);
+    return null;
+  }
 }
 
-// Laat een eenvoudige enquête verschijnen
+async function drawRoute(startCoords, endCoords) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${endCoords.lon},${endCoords.lat}?overview=full&geometries=geojson`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.code === "Ok") {
+      if (routeLayer) {
+        map.removeLayer(routeLayer);
+      }
+      routeLayer = L.geoJSON(data.routes[0].geometry, {
+        style: { color: 'blue', weight: 5 }
+      }).addTo(map);
+      map.fitBounds(routeLayer.getBounds());
+    } else {
+      alert("Route kon niet worden berekend.");
+    }
+  } catch (error) {
+    console.error("Fout bij tekenen route:", error);
+  }
+}
+
+function getFiveCoordinates(routeCoords) {
+    a=20;
+  if (routeCoords.length <= a) return routeCoords;
+  const step = Math.floor(routeCoords.length / a);
+  let selectedCoords = [];
+  for (let i = 0; i < a; i++) {
+    selectedCoords.push(routeCoords[i * step]);
+  }
+  return selectedCoords;
+}
+
+async function fetchWindDataPerCoord(lat, lon) {
+  try {
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=windspeed_10m,winddirection_10m&timezone=auto`);
+    const data = await response.json();
+    const latestIndex = data.hourly.time.length - 1;
+    return {
+      windSpeed: data.hourly.windspeed_10m[latestIndex],
+      windDirection: data.hourly.winddirection_10m[latestIndex]
+    };
+  } catch (error) {
+    console.error("Fout bij ophalen winddata:", error);
+    return null;
+  }
+}
+
+async function fetchWindDataStartEnd(startCoords, endCoords) {
+  try {
+    const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${startCoords.lat}&longitude=${startCoords.lon}&hourly=windspeed_10m,winddirection_10m&timezone=auto`);
+    const weatherData = await weatherResponse.json();
+    const latestIndex = weatherData.hourly.time.length - 1;
+    const windSpeed = weatherData.hourly.windspeed_10m[latestIndex];
+    const windDirection = weatherData.hourly.winddirection_10m[latestIndex];
+
+    const totalDistance = calculateDistance(startCoords.lat, startCoords.lon, endCoords.lat, endCoords.lon);
+
+    document.getElementById("windResult").innerHTML =
+      `<p><strong>Startlocatie:</strong> ${startCoords.display_name}</p>
+       <p><strong>Eindlocatie:</strong> ${endCoords.display_name}</p>
+       <p><strong>Windsnelheid (startlocatie):</strong> ${windSpeed} km/h</p>
+       <p><strong>Windrichting (startlocatie):</strong> ${windDirection}°</p>
+       <p><strong>Afstand tussen start en eind:</strong> ${totalDistance.toFixed(2)} km</p>`;
+    document.getElementById("windResult").style.display = "block";
+  } catch (error) {
+    console.error("Error ophalen windgegevens:", error);
+  }
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 function EnqueteInvullen() {
-    document.body.innerHTML = `
+  document.body.innerHTML = `
     <div class="hoofding">
-        <h1>Feedback Formulier</h1>
+      <h1>Feedback Formulier</h1>
     </div>
-    <form>
-        <label for="batterij">Batterij op einde (in %):<sup>*</sup> </label>
-        <input type="number" name="batterij" min="0" max="100" required><br>
+    <form style="margin:20px;">
+      <label for="batterij">Batterij op einde (in %):<sup>*</sup> </label>
+      <input type="number" name="batterij" min="0" max="100" required><br><br>
 
-        <label for="tevredenheid">Ben je tevreden?<sup>*</sup> </label>
-        <select name="tevreden" id="tevreden" required>
-            <option value=""></option>
-            <option value="ja">Ja</option>
-            <option value="nee">Nee</option>
-            <option value="deels">Deels</option>
-        </select><br><br>
+      <label>Ben je tevreden?<sup>*</sup> </label>
+      <select required>
+        <option value=""></option>
+        <option value="ja">Ja</option>
+        <option value="nee">Nee</option>
+        <option value="deels">Deels</option>
+      </select><br><br>
 
-        <label for="opmerking">Heb je nog opmerkingen?</label><br><br>
-        <textarea name="info" rows="5" cols="50"></textarea><br><br>
+      <label>Opmerkingen:</label><br>
+      <textarea rows="5" cols="50"></textarea><br><br>
 
-        <input type="submit" value="Verstuur" style="padding: 10px 15px;" class="formulier">
+      <input type="submit" value="Versturen" class="formulier">
     </form>
-    <p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
-    `;
+  `;
 }
