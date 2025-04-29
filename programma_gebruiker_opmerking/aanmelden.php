@@ -1,34 +1,60 @@
 <?php
-$naam = $_POST['naam'];
-$email = $_POST['email'];
-$telefoon = $_POST['telefoon'];
-$gebruikersnaam = $_POST['gebruikersnaam'];
-$wachtwoord = password_hash($_POST['wachtwoord'], PASSWORD_DEFAULT);
+ob_start(); // buffer om header-fouten te vermijden
 
-// Maak een array van de gegevens
-$gebruiker = [
-    'naam' => $naam,
-    'email' => $email,
-    'telefoon' => $telefoon,
-    'gebruikersnaam' => $gebruikersnaam,
-    'wachtwoord' => $wachtwoord
-];
+$bestand = __DIR__ . '/gebruikers.xml';
 
-// Bestandsnaam
-$bestand = 'gebruikers.json';
-
-// Als het bestand al bestaat, lees de inhoud
-if (file_exists($bestand)) {
-    $data = json_decode(file_get_contents($bestand), true);
-} else {
-    $data = [];
+// Als bestand niet bestaat, maak een nieuw XML-bestand aan
+if (!file_exists($bestand)) {
+    $xml = new SimpleXMLElement('<gebruikers></gebruikers>'); // Root element
+    $xml->asXML($bestand);
 }
 
-// Voeg de nieuwe gebruiker toe
-$data[] = $gebruiker;
+$xml = simplexml_load_file($bestand);
 
-// Sla alles opnieuw op
-file_put_contents($bestand, json_encode($data, JSON_PRETTY_PRINT));
+// Verkrijg de form-gegevens
+$actie = $_POST['actie'];
+$gebruikersnaam = $_POST['gebruikersnaam'];
+$wachtwoord = $_POST['wachtwoord'];
 
-echo "Registratie gelukt zonder database!";
+// Zoek naar gebruiker in XML
+$gevonden = null;
+foreach ($xml->gebruiker as $gebruiker) {
+    if ((string)$gebruiker->gebruikersnaam === $gebruikersnaam) {
+        $gevonden = $gebruiker;
+        break;
+    }
+}
+
+if ($actie === 'inloggen') {
+    if ($gevonden && password_verify($wachtwoord, (string)$gevonden->wachtwoord)) {
+        $bericht = "Welkom terug, " . htmlspecialchars((string)$gevonden->naam) . "!";
+    } else {
+        $bericht = "Fout: gebruikersnaam of wachtwoord is onjuist.";
+    }
+} elseif ($actie === 'registreren') {
+    if ($gevonden) {
+        $bericht = "Gebruikersnaam bestaat al!";
+    } else {
+        // Nieuwe gebruiker toevoegen aan XML
+        $gebruiker = $xml->addChild('gebruiker');
+        $gebruiker->addChild('naam', $_POST['naam']);
+        $gebruiker->addChild('email', $_POST['email']);
+        $gebruiker->addChild('telefoon', $_POST['telefoon']);
+        $gebruiker->addChild('gebruikersnaam', $gebruikersnaam);
+        $gebruiker->addChild('wachtwoord', password_hash($wachtwoord, PASSWORD_DEFAULT));
+
+        // Opslaan van de wijzigingen in XML
+        $xml->asXML($bestand);
+        $bericht = "Registratie succesvol! Je kunt nu inloggen.";
+    }
+} else {
+    $bericht = "Ongeldige actie.";
+}
+
+// Toon resultaat
+echo "<h1>Resultaat</h1>";
+echo "<p>" . htmlspecialchars($bericht) . "</p>";
+echo "<a href='aanmelden.html'>Terug naar formulier</a>";
+
+ob_end_flush();
 ?>
