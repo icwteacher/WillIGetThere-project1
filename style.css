@@ -1,5 +1,4 @@
-<style>
-    p { font-size: 14px; margin-top: -8px; }
+    p { font-size: 14px; margin-top: 20px; }
     .titel{
       position: absolute;
       left: 80px;
@@ -16,6 +15,12 @@
     input:focus, textarea:focus, select:focus {
       border: 3px solid rgb(252,210,60);
     }
+    .hidden {
+        display: none;
+      }
+      .visible {
+        display: block;
+      }
     .hoofding {
       background-color: rgb(79, 198, 228);
       padding: 20px;
@@ -23,7 +28,7 @@
       margin-left: -10px;
       height: 40px;
     }
-    h1 { margin: 0; color: white; }
+    h1 { margin: 0; color: white; position: relative;}
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -43,10 +48,18 @@
     .text-container {
       flex: 0 0 58%;
     }
-    input, button {
-      margin: 10px;
-      padding: 8px;
+    input {
+        margin: 10px;
+        padding: 8px;
+        background-color: rgb(255, 250, 233);
+        color: rgb(231, 186, 21);
+        border: 1px solid rgb(252,210,60);
+        border-radius: 5px;
     }
+    input:focus {
+        border: 3px solid rgb(252,210,60);
+        outline: none;
+      }
     .logo{
       height: 40px;
       position: absolute;
@@ -58,6 +71,8 @@
       color: white;
       font-weight: bold;
       border-radius: 5px;
+      margin: 10px;
+      padding: 8px;
     }
     .result {
       margin-top: 20px;
@@ -67,7 +82,7 @@
     }
     .uitloggen {
       position: absolute;
-      top: 20px;
+      top: 15px;
       right: 20px;
       width: 85px;
       padding: 8px;
@@ -114,4 +129,3 @@
       .image-container, .text-container { width: 100%; }
       .text-container { margin-top: 20px; }
     }
-  </style>
