@@ -6,22 +6,21 @@
   <title>Will I get there</title>
   <link rel="icon" type="image/x-jpg" href="logo.jpg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css">
 
-  
 </head>
 
 <body>
   <div class="hoofding">
     <img src="logo.jpg" alt="Sila Westerlo logo" class="logo">
     <div class="titel"><h1>Kan je batterij het aan?</h1></div>
-    <button class="uitloggen">Uitloggen</button>
+    <form action="index.html"><button class="uitloggen">Uitloggen</button></form>
+    
   </div>
-
   <div class="container">
     <div class="image-container">
       <div id="map"></div>
     </div>
-
     <div class="text-container">
             <div class="input-group">
               <label for="batterijProcent">Batterij bij vertrek (in %):<sup>*</sup></label> 
@@ -49,7 +48,6 @@
         </div>
       </div>
       <p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
-
       <br><br>
 
       <button onclick="getRouteAndFiveCoordinates()">Bereken de gegevens</button>
