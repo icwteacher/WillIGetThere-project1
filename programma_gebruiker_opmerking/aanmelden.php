@@ -79,7 +79,7 @@ echo <<<HTML
     <div class="titel"><h1>Resultaat</h1></div>
   </div>
         <p>{$bericht}</p>
-        <a href='index.html'>Terug naar formulier</a>
+        <a href='website.html'>Terug naar formulier</a>
     </div>
 </body>
 </html>
