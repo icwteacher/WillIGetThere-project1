@@ -1,131 +1,182 @@
-    p { font-size: 14px; margin-top: 20px; }
-    .titel{
-      position: absolute;
-      left: 80px;
-    }
-    select, textarea, input {
-      background-color: rgb(255, 250, 233);
-      color: rgb(231, 186, 21);
-      border: 1px solid rgb(252,210,60);
-      border-radius: 5px;
-      box-sizing: border-box;
-      transition: 0.5s;
-      outline: none;
-    }
-    input:focus, textarea:focus, select:focus {
-      border: 3px solid rgb(252,210,60);
-    }
-    .hidden {
-        display: none;
-      }
-      .visible {
-        display: block;
-      }
-    .hoofding {
-      background-color: rgb(79, 198, 228);
-      padding: 20px;
-      position: relative;
-      margin-left: -10px;
-      height: 40px;
-    }
-    h1 { margin: 0; color: white; position: relative;}
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      margin-left: 10px;
-    }
-    .container {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin: 20px;
-    }
-    .image-container {
-      flex: 0 0 40%;
-      position: relative;
-    }
-    .text-container {
-      flex: 0 0 58%;
-    }
-    input {
-        margin: 10px;
-        padding: 8px;
-        background-color: rgb(255, 250, 233);
-        color: rgb(231, 186, 21);
-        border: 1px solid rgb(252,210,60);
-        border-radius: 5px;
-    }
-    input:focus {
-        border: 3px solid rgb(252,210,60);
-        outline: none;
-      }
-    .logo{
-      height: 40px;
-      position: absolute;
-    }
-    button, .formulier {
-      background-color: rgb(79, 198, 228);
-      border: none;
-      cursor: pointer;
-      color: white;
-      font-weight: bold;
-      border-radius: 5px;
-      margin: 10px;
-      padding: 8px;
-    }
-    .result {
-      margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      display: inline-block;
-    }
-    .uitloggen {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      width: 85px;
-      padding: 8px;
-      background-color: white;
-      border: none;
-      cursor: pointer;
-      color: rgb(255, 207, 33);
-      font-weight: bold;
-      border-radius: 5px;
-    }
-    .input-row {
-      display: flex;
-      flex-wrap: wrap;
-    }
-    .input-group {
-      flex: 1 1 45%;
-      display: flex;
-      flex-direction: column;
-    }
-    .feedback-row {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin: 20px 0;
-    }
-    .feedback-row label { margin: 0; font-size: 16px; }
-    .feedback {
-      background-color: rgb(79, 198, 228);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 5px;
-      flex-shrink: 0;
-    }
-    #map {
-      height: 400px;
-      width: 100%;
-      margin-top: 10px;
-      border-radius: 10px;
-    }
-    @media (max-width: 600px) {
-      .container { flex-direction: column; }
-      .image-container, .text-container { width: 100%; }
-      .text-container { margin-top: 20px; }
-    }
+p {
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+.titel {
+  position: absolute;
+  left: 80px;
+}
+
+select,
+textarea,
+input {
+  background-color: rgb(255, 250, 233);
+  color: rgb(231, 186, 21);
+  border: 1px solid rgb(252, 210, 60);
+  border-radius: 5px;
+  box-sizing: border-box;
+  transition: 0.5s;
+  outline: none;
+  padding: 8px;
+  margin: 10px;
+}
+
+select:focus,
+textarea:focus,
+input:focus {
+  border: 3px solid rgb(252, 210, 60);
+}
+
+.hidden {
+  display: none;
+}
+
+.visible {
+  display: block;
+}
+
+.hoofding {
+  background-color: rgb(79, 198, 228);
+  padding: 20px;
+  position: relative;
+  margin-left: -10px;
+  height: 40px;
+}
+
+h1 {
+  margin: 0;
+  color: white;
+  position: relative;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  margin-left: 10px;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 20px;
+}
+
+.image-container {
+  flex: 0 0 40%;
+  position: relative;
+}
+
+.text-container {
+  flex: 0 0 58%;
+}
+
+.logo {
+  height: 40px;
+  position: absolute;
+}
+
+.formulier,
+button {
+  background-color: rgb(79, 198, 228);
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  margin: 10px;
+  padding: 8px;
+  transition: 0.5s;
+}
+
+.formulier:focus {
+  border: 0;
+}
+
+.formulier:hover,
+button:hover {
+  background-color: rgb(35, 100, 116);
+}
+
+.result {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  display: inline-block;
+}
+
+.uitloggen {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  width: 85px;
+  padding: 8px;
+  background-color: white;
+  border: none;
+  cursor: pointer;
+  color: rgb(255, 207, 33);
+  font-weight: bold;
+  border-radius: 5px;
+  transition: 0.5s;
+}
+
+.uitloggen:hover {
+  background-color: rgb(238, 238, 238);
+}
+
+.input-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.input-group {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+}
+
+.feedback-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+.feedback-row label {
+  margin: 0;
+  font-size: 16px;
+}
+
+.feedback {
+  background-color: rgb(79, 198, 228);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+#map {
+  height: 400px;
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+
+@media (max-width: 600px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .image-container,
+  .text-container {
+    width: 100%;
+  }
+
+  .text-container {
+    margin-top: 20px;
+  }
+}
