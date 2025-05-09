@@ -24,6 +24,7 @@ async function getRouteAndFiveCoordinates(event) {
     if (route) {
       const fiveCoords = getFiveCoordinates(route);
       let output = "<p><strong>Coördinaten langs de route:</strong></p>";
+      let totaalVerbruikPct = 0;
 
       for (let i = 0; i < fiveCoords.length; i++) {
         const coord = fiveCoords[i];
@@ -34,17 +35,46 @@ async function getRouteAndFiveCoordinates(event) {
         const elevation = await fetchElevation(lat, lon);
 
         if (windData) {
-            output += `<p><strong>Coördinaat ${i + 1}:</strong> Lat: ${lat}, Lon: ${lon}<br>
-            Windsnelheid: ${windData.windSpeed} km/h, Windrichting: ${windData.windDirection}°<br>
-            Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
+          output += `<p><strong>Coördinaat ${i + 1}:</strong> Lat: ${lat}, Lon: ${lon}<br>
+          Windsnelheid: ${windData.windSpeed} km/h, Windrichting: ${windData.windDirection}°<br>
+          Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
         } else {
-            output += `<p><strong>Coördinaat ${i + 1}:</strong> Geen winddata beschikbaar<br>
-            Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
+          output += `<p><strong>Coördinaat ${i + 1}:</strong> Geen winddata beschikbaar<br>
+          Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
         }
+
+        if (i < fiveCoords.length - 1) {
+          const nextCoord = fiveCoords[i + 1];
+          const nextLat = nextCoord[1];
+          const nextLon = nextCoord[0];
+          const afstand_m = calculateDistance(lat, lon, nextLat, nextLon) * 1000;
+          const nextElevation = await fetchElevation(nextLat, nextLon);
+          const hoogte_m = nextElevation !== null && elevation !== null ? nextElevation - elevation : 0;
+
+          const batterijData = berekenBatterijVerbruik({
+            afstand_m: afstand_m,
+            snelheid_kmh: 20,
+            massa_kg: 85,
+            hoogte_m: hoogte_m,
+            batterij_Wh: 750,
+            windsnelheid_kmh: windData.windSpeed,
+            modus: "eco"
+          });
+
+          totaalVerbruikPct += parseFloat(batterijData.verbruik_pct);
+
+          output += `<p><strong>Batterijverbruik (tussen punt ${i + 1} en ${i + 2}):</strong><br>
+          Modus: ${batterijData.modus}, Efficiëntie: ${batterijData.efficiëntie}<br>
+          Weerstand lucht: ${batterijData.F_lucht} N, Rolweerstand: ${batterijData.F_rol} N, Hellingkracht: ${batterijData.F_helling} N<br>
+          Energieverbruik: ${batterijData.energie_Wh} Wh, Batterijverbruik: ${batterijData.verbruik_pct}</p>`;
+        }
+
         document.getElementById("result").style.display = "block";
       }
 
+      output += `<p><strong>Totaal batterijverbruik over route:</strong> ${totaalVerbruikPct.toFixed(2)}%</p>`;
       document.getElementById('result').innerHTML = output;
+
       drawRoute(startCoords, endCoords);
       fetchWindDataStartEnd(startCoords, endCoords);
     }
@@ -112,7 +142,7 @@ async function drawRoute(startCoords, endCoords) {
 }
 
 function getFiveCoordinates(routeCoords) {
-    a=20;
+  a = 20;
   if (routeCoords.length <= a) return routeCoords;
   const step = Math.floor(routeCoords.length / a);
   let selectedCoords = [];
@@ -197,52 +227,49 @@ async function fetchElevation(lat, lon) {
   }
 }
 
-import { berekenBatterijVerbruik } from "./berekeningen.js";
+function berekenBatterijVerbruik({
+  afstand_m,
+  snelheid_kmh = 20,
+  massa_kg = 85,
+  hoogte_m,
+  batterij_Wh = 750,
+  Cd = 1.0,
+  A = 0.5,
+  Crr = 0.005,
+  luchtdichtheid = 1.225,
+  windsnelheid_kmh,
+  modus = "eco"
+}) {
+  const g = 9.81;
+  const snelheid_ms = snelheid_kmh / 3.6;
+  const windsnelheid_ms = windsnelheid_kmh / 3.6;
+  const v_rel = snelheid_ms + windsnelheid_ms;
 
-async function berekenVerbruikViaWebsite(event) {
-  event.preventDefault();
+  const F_lucht = 0.5 * luchtdichtheid * Cd * A * Math.pow(v_rel, 2);
+  const F_rol = Crr * massa_kg * g;
+  const F_helling = massa_kg * g * (hoogte_m / afstand_m);
 
-  const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
-  const straatStart = document.getElementById("straatStart").value.trim();
-  const gemeenteEnd = document.getElementById("gemeenteEinde").value.trim();
-  const straatEnd = document.getElementById("straatEinde").value.trim();
-  const batterijWh = parseFloat(document.getElementById("batterijWh").value);
-  const massa_kg = parseFloat(document.getElementById("massa").value);
-  const modus = document.getElementById("modus").value;
+  const F_totaal = F_lucht + F_rol + F_helling;
+  const energie_J = F_totaal * afstand_m;
+  const energie_Wh = energie_J / 3600;
 
-  const startCoords = await getCoordinates(gemeenteStart, straatStart);
-  const endCoords = await getCoordinates(gemeenteEnd, straatEnd);
+  const efficiënties = {
+    eco: 0.55,
+    tour: 0.65,
+    sport: 0.70,
+    turbo: 0.80
+  };
 
-  if (!startCoords || !endCoords) {
-    alert("Kon geen coördinaten vinden.");
-    return;
-  }
+  const eta = efficiënties[modus] ?? 0.65;
+  const verbruik_pct = (energie_Wh / batterij_Wh) / eta * 100;
 
-  const afstand_km = calculateDistance(startCoords.lat, startCoords.lon, endCoords.lat, endCoords.lon);
-  const afstand_m = afstand_km * 1000;
-
-  const hoogte_start = await fetchElevation(startCoords.lat, startCoords.lon);
-  const hoogte_end = await fetchElevation(endCoords.lat, endCoords.lon);
-  const hoogteverschil = hoogte_end - hoogte_start;
-
-  const windData = await fetchWindDataStartEnd(startCoords, endCoords);
-
-  const snelheid_kmh = 20; // voorbeeldwaarde of later inputveld
-  const windsnelheid_kmh = windData?.windSpeed ?? 0;
-
-  const resultaat = berekenBatterijVerbruik({
-    afstand_m,
-    snelheid_kmh,
-    massa_kg,
-    hoogte_m: hoogteverschil,
-    batterij_Wh: batterijWh,
-    modus,
-    windsnelheid_kmh
-  });
-
-  document.getElementById("batterijVerbruikResultaat").innerHTML = `
-    <p><strong>Batterijverbruik (${modus}):</strong> ${resultaat.verbruik_pct}</p>
-    <p><strong>Energieverbruik:</strong> ${resultaat.energie_Wh} Wh</p>
-    <p>Luchtweerstand: ${resultaat.F_lucht} N, Rolweerstand: ${resultaat.F_rol} N, Helling: ${resultaat.F_helling} N</p>
-  `;
+  return {
+    modus: modus,
+    efficiëntie: eta,
+    F_lucht: F_lucht.toFixed(2),
+    F_rol: F_rol.toFixed(2),
+    F_helling: F_helling.toFixed(2),
+    energie_Wh: energie_Wh.toFixed(2),
+    verbruik_pct: verbruik_pct.toFixed(2)
+  };
 }
