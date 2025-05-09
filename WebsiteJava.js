@@ -71,8 +71,11 @@ async function getRouteAndFiveCoordinates(event) {
 
         document.getElementById("result").style.display = "block";
       }
-
-      output += `<p><strong>Totaal batterijverbruik over route:</strong> ${totaalVerbruikPct.toFixed(2)}%</p>`;
+      let batterijProcent = parseFloat(document.getElementById("batterijProcent").value.trim());
+      let totaalVerbruiktProcent = totaalVerbruikPct.toFixed(2)
+      output += `<p><strong>Totaal batterijverbruik over route:</strong> ${totaalVerbruiktProcent}%</p>
+      <p><strong>Batterij op einde:</strong> ${batterijProcent-totaalVerbruiktProcent}%</p>
+      `;
       document.getElementById('result').innerHTML = output;
 
       drawRoute(startCoords, endCoords);
