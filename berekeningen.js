@@ -1,14 +1,14 @@
 function berekenBatterijVerbruik({
   afstand_m,
-  snelheid_kmh = 20,
-  massa_kg = 85,
+  snelheid_kmh,
+  massa_kg,
   hoogte_m,
-  batterij_Wh = 750,
+  batterij_Wh,
   Cd = 1.0,
   A = 0.5,
   Crr = 0.005,
   luchtdichtheid = 1.225,
-  windsnelheid_kmh,
+  windsnelheid_kmh = 0,
   modus = "eco"
 }) {
   const g = 9.81;
@@ -45,3 +45,5 @@ function berekenBatterijVerbruik({
       verbruik_pct: verbruik_pct.toFixed(2) + "%"
   };
 }
+
+export { berekenBatterijVerbruik };
