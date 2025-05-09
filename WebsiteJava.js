@@ -196,3 +196,53 @@ async function fetchElevation(lat, lon) {
     return null;
   }
 }
+
+import { berekenBatterijVerbruik } from "./berekeningen.js";
+
+async function berekenVerbruikViaWebsite(event) {
+  event.preventDefault();
+
+  const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
+  const straatStart = document.getElementById("straatStart").value.trim();
+  const gemeenteEnd = document.getElementById("gemeenteEinde").value.trim();
+  const straatEnd = document.getElementById("straatEinde").value.trim();
+  const batterijWh = parseFloat(document.getElementById("batterijWh").value);
+  const massa_kg = parseFloat(document.getElementById("massa").value);
+  const modus = document.getElementById("modus").value;
+
+  const startCoords = await getCoordinates(gemeenteStart, straatStart);
+  const endCoords = await getCoordinates(gemeenteEnd, straatEnd);
+
+  if (!startCoords || !endCoords) {
+    alert("Kon geen coördinaten vinden.");
+    return;
+  }
+
+  const afstand_km = calculateDistance(startCoords.lat, startCoords.lon, endCoords.lat, endCoords.lon);
+  const afstand_m = afstand_km * 1000;
+
+  const hoogte_start = await fetchElevation(startCoords.lat, startCoords.lon);
+  const hoogte_end = await fetchElevation(endCoords.lat, endCoords.lon);
+  const hoogteverschil = hoogte_end - hoogte_start;
+
+  const windData = await fetchWindDataStartEnd(startCoords, endCoords);
+
+  const snelheid_kmh = 20; // voorbeeldwaarde of later inputveld
+  const windsnelheid_kmh = windData?.windSpeed ?? 0;
+
+  const resultaat = berekenBatterijVerbruik({
+    afstand_m,
+    snelheid_kmh,
+    massa_kg,
+    hoogte_m: hoogteverschil,
+    batterij_Wh: batterijWh,
+    modus,
+    windsnelheid_kmh
+  });
+
+  document.getElementById("batterijVerbruikResultaat").innerHTML = `
+    <p><strong>Batterijverbruik (${modus}):</strong> ${resultaat.verbruik_pct}</p>
+    <p><strong>Energieverbruik:</strong> ${resultaat.energie_Wh} Wh</p>
+    <p>Luchtweerstand: ${resultaat.F_lucht} N, Rolweerstand: ${resultaat.F_rol} N, Helling: ${resultaat.F_helling} N</p>
+  `;
+}
