@@ -4,48 +4,74 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 let routeLayer;
 
-async function getRouteAndFiveCoordinates(event) {
-  event.preventDefault();
-  const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
-  const straatStart = document.getElementById("straatStart").value.trim();
-  const gemeenteEnd = document.getElementById("gemeenteEinde").value.trim();
-  const straatEnd = document.getElementById("straatEinde").value.trim();
+async function getRouteAndFiveCoordinates() {
+  // lees alle invoervelden
+  const gemeenteStart  = document.getElementById("gemeenteStart").value.trim();
+  const straatStart    = document.getElementById("straatStart").value.trim();
+  const gemeenteEnd    = document.getElementById("gemeenteEinde").value.trim();
+  const straatEnd      = document.getElementById("straatEinde").value.trim();
+  const batterijPct    = parseFloat(document.getElementById("batterijProcent").value);
+  const batterijCap    = parseFloat(document.getElementById("batterijCap").value);
+  const modus          = document.getElementById("modus").value;
+  const massa_kg       = parseFloat(document.getElementById("massa").value) || 80;
+  const snelheid_kmh   = 20; // vaste snelheid, of vervang door eigen input
 
   if (!gemeenteStart || !gemeenteEnd) {
-    alert("Vul zowel de start- als eindlocatie in.");
+    alert("Vul start- en eindlocatie in.");
     return;
   }
 
+  // coördinaten en route
   const startCoords = await getCoordinates(gemeenteStart, straatStart);
-  const endCoords = await getCoordinates(gemeenteEnd, straatEnd);
+  const endCoords   = await getCoordinates(gemeenteEnd, straatEnd);
+  if (!startCoords || !endCoords) {
+    alert("Kon geen coördinaten vinden.");
+    return;
+  }
+  const route = await getRoute(startCoords, endCoords);
+  if (!route) {
+    alert("Route kon niet worden berekend.");
+    return;
+  }
 
-  if (startCoords && endCoords) {
-    const route = await getRoute(startCoords, endCoords);
-    if (route) {
-      const fiveCoords = getFiveCoordinates(route);
-      let output = "<p><strong>Coördinaten langs de route:</strong></p>";
+  // distantie en hoogte
+  const afstand_km = calculateDistance(startCoords.lat, startCoords.lon, endCoords.lat, endCoords.lon);
+  const afstand_m  = afstand_km * 1000;
+  const hoogte_start = await fetchElevation(startCoords.lat, startCoords.lon);
+  const hoogte_end   = await fetchElevation(endCoords.lat, endCoords.lon);
+  const hoogteverschil = hoogte_end - hoogte_start;
 
-      for (let i = 0; i < fiveCoords.length; i++) {
-        const coord = fiveCoords[i];
-        const lat = coord[1];
-        const lon = coord[0];
+  // winddata start/stop
+  const windData = await fetchWindDataStartEnd(startCoords, endCoords);
+  const windsnelheid_kmh = windData?.windSpeed ?? 0;
 
-        const windData = await fetchWindDataPerCoord(lat, lon);
-        const elevation = await fetchElevation(lat, lon);
+  // ** DE BATTERIJBEREKENING **
+  const result = window.berekenBatterijVerbruik({
+    afstand_m,
+    snelheid_kmh,
+    massa_kg,
+    hoogte_m: hoogteverschil,
+    batterij_Wh: batterijCap,
+    modus,
+    windsnelheid_kmh
+  });
 
-        if (windData) {
-            output += `<p><strong>Coördinaat ${i + 1}:</strong> Lat: ${lat}, Lon: ${lon}<br>
-            Windsnelheid: ${windData.windSpeed} km/h, Windrichting: ${windData.windDirection}°<br>
-            Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
-        } else {
-            output += `<p><strong>Coördinaat ${i + 1}:</strong> Geen winddata beschikbaar<br>
-            Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
-        }
-        document.getElementById("result").style.display = "block";
-      }
+  // interpretatie van % verbruik tov start-%
+  const verbruiktPct = parseFloat(result.verbruik_pct);
+  const eindPct = batterijPct - verbruiktPct;
 
-      document.getElementById('result').innerHTML = output;
-      drawRoute(startCoords, endCoords);
+  // toon alles op de pagina
+  document.getElementById("result").style.display = "block";
+  document.getElementById("result").innerHTML = `
+    <h3>Batterijverbruik (${modus}): ${result.verbruik_pct}</h3>
+    <p>Start: ${batterijPct.toFixed(1)}%, Einde: ${eindPct.toFixed(1)}%</p>
+    <p>Energie: ${result.energie_Wh} Wh<br>
+       Lucht: ${result.F_lucht} N, Rol: ${result.F_rol} N, Helling: ${result.F_helling} N
+    </p>
+  `;
+
+  // existing: route tekenen + windResult opvullen
+  drawRoute(startCoords, endCoords);
       fetchWindDataStartEnd(startCoords, endCoords);
     }
   } else {
@@ -53,6 +79,8 @@ async function getRouteAndFiveCoordinates(event) {
   }
   return false;
 }
+document.getElementById("berekenBtn")
+        .addEventListener("click", getRouteAndFiveCoordinates);
 
 async function getCoordinates(gemeente, straat) {
   try {
