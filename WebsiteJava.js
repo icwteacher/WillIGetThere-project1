@@ -31,11 +31,15 @@ async function getRouteAndFiveCoordinates(event) {
         const lon = coord[0];
 
         const windData = await fetchWindDataPerCoord(lat, lon);
+        const elevation = await fetchElevation(lat, lon);
 
         if (windData) {
-          output += `<p><strong>Coördinaat ${i + 1}:</strong> Lat: ${lat}, Lon: ${lon}<br>Windsnelheid: ${windData.windSpeed} km/h, Windrichting: ${windData.windDirection}°</p>`;
+            output += `<p><strong>Coördinaat ${i + 1}:</strong> Lat: ${lat}, Lon: ${lon}<br>
+            Windsnelheid: ${windData.windSpeed} km/h, Windrichting: ${windData.windDirection}°<br>
+            Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
         } else {
-          output += `<p><strong>Coördinaat ${i + 1}:</strong> Geen winddata beschikbaar</p>`;
+            output += `<p><strong>Coördinaat ${i + 1}:</strong> Geen winddata beschikbaar<br>
+            Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
         }
         document.getElementById("result").style.display = "block";
       }
@@ -182,3 +186,13 @@ function logout() {
   header("Location: index.html");
 }
 
+async function fetchElevation(lat, lon) {
+  try {
+    const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
+    const data = await response.json();
+    return data.elevation;
+  } catch (error) {
+    console.error("Fout bij ophalen hoogtemeters:", error);
+    return null;
+  }
+}
