@@ -1,3 +1,4 @@
+// bestaande functie
 function berekenBatterijVerbruik({
   afstand_m,
   snelheid_kmh,
@@ -24,19 +25,17 @@ function berekenBatterijVerbruik({
   const energie_J = F_totaal * afstand_m;
   const energie_Wh = energie_J / 3600;
 
-  // Kies efficiëntie op basis van modus
   const efficiënties = {
       eco: 0.55,
       tour: 0.65,
       sport: 0.70,
       turbo: 0.80
   };
-
-  const eta = efficiënties[modus] ?? 0.65; // standaard op 'tour' als onbekend
+  const eta = efficiënties[modus] ?? 0.65;
   const verbruik_pct = (energie_Wh / batterij_Wh) / eta * 100;
 
   return {
-      modus: modus,
+      modus,
       efficiëntie: eta,
       F_lucht: F_lucht.toFixed(2),
       F_rol: F_rol.toFixed(2),
@@ -46,4 +45,5 @@ function berekenBatterijVerbruik({
   };
 }
 
-export { berekenBatterijVerbruik };
+// Exporteer naar window zodat we geen modules hoeven te gebruiken:
+window.berekenBatterijVerbruik = berekenBatterijVerbruik;
