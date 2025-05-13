@@ -22,61 +22,48 @@ async function getRouteAndFiveCoordinates(event) {
   if (startCoords && endCoords) {
     const route = await getRoute(startCoords, endCoords);
     if (route) {
-      const fiveCoords = getFiveCoordinates(route);
-      let output = "<p><strong>Coördinaten langs de route:</strong></p>";
+      const coords = getTwentyCoordinates(route);
       let totaalVerbruikPct = 0;
 
-      for (let i = 0; i < fiveCoords.length; i++) {
-        const coord = fiveCoords[i];
+      for (let i = 0; i < coords.length - 1; i++) {
+        const coord = coords[i];
+        const nextCoord = coords[i + 1];
+
         const lat = coord[1];
         const lon = coord[0];
+        const nextLat = nextCoord[1];
+        const nextLon = nextCoord[0];
+
+        const afstand_m = calculateDistance(lat, lon, nextLat, nextLon) * 1000;
+
+        const elevation = await fetchElevation(lat, lon);
+        const nextElevation = await fetchElevation(nextLat, nextLon);
+        const hoogte_m = nextElevation !== null && elevation !== null ? nextElevation - elevation : 0;
 
         const windData = await fetchWindDataPerCoord(lat, lon);
-        const elevation = await fetchElevation(lat, lon);
 
-        if (windData) {
-          output += `<p><strong>Coördinaat ${i + 1}:</strong> Lat: ${lat}, Lon: ${lon}<br>
-          Windsnelheid: ${windData.windSpeed} km/h, Windrichting: ${windData.windDirection}°<br>
-          Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
-        } else {
-          output += `<p><strong>Coördinaat ${i + 1}:</strong> Geen winddata beschikbaar<br>
-          Hoogte: ${elevation !== null ? elevation + ' meter' : 'onbekend'}</p>`;
-        }
+        const batterijData = berekenBatterijVerbruik({
+          afstand_m: afstand_m,
+          snelheid_kmh: 20,
+          massa_kg: 85,
+          hoogte_m: hoogte_m,
+          batterij_Wh: 750,
+          windsnelheid_kmh: windData ? windData.windSpeed : 0,
+          modus: document.getElementById("modus").value.trim()
+        });
 
-        if (i < fiveCoords.length - 1) {
-          const nextCoord = fiveCoords[i + 1];
-          const nextLat = nextCoord[1];
-          const nextLon = nextCoord[0];
-          const afstand_m = calculateDistance(lat, lon, nextLat, nextLon) * 1000;
-          const nextElevation = await fetchElevation(nextLat, nextLon);
-          const hoogte_m = nextElevation !== null && elevation !== null ? nextElevation - elevation : 0;
-
-          const batterijData = berekenBatterijVerbruik({
-            afstand_m: afstand_m,
-            snelheid_kmh: 20,
-            massa_kg: 85,
-            hoogte_m: hoogte_m,
-            batterij_Wh: 750,
-            windsnelheid_kmh: windData.windSpeed,
-            modus: document.getElementById("modus").value.trim()
-          });
-
-          totaalVerbruikPct += parseFloat(batterijData.verbruik_pct);
-
-          output += `<p><strong>Batterijverbruik (tussen punt ${i + 1} en ${i + 2}):</strong><br>
-          Modus: ${batterijData.modus}, Efficiëntie: ${batterijData.efficiëntie}<br>
-          Weerstand lucht: ${batterijData.F_lucht} N, Rolweerstand: ${batterijData.F_rol} N, Hellingkracht: ${batterijData.F_helling} N<br>
-          Energieverbruik: ${batterijData.energie_Wh} Wh, Batterijverbruik: ${batterijData.verbruik_pct}</p>`;
-        }
-
-        document.getElementById("result").style.display = "block";
+        totaalVerbruikPct += parseFloat(batterijData.verbruik_pct);
       }
-      let batterijProcent = parseFloat(document.getElementById("batterijProcent").value.trim());
-      let totaalVerbruiktProcent = totaalVerbruikPct.toFixed(2)
-      output += `<p><strong>Totaal batterijverbruik over route:</strong> ${totaalVerbruiktProcent}%</p>
-      <p><strong>Batterij op einde:</strong> ${batterijProcent-totaalVerbruiktProcent}%</p>
-      `;
+
+      const batterijProcent = parseFloat(document.getElementById("batterijProcent").value.trim());
+      const totaalVerbruiktProcent = totaalVerbruikPct.toFixed(2);
+      const resterend = (batterijProcent - totaalVerbruiktProcent).toFixed(2);
+
+      const output = `<p><strong>Totaal batterijverbruik over route:</strong> ${totaalVerbruiktProcent}%</p>
+                      <p><strong>Batterij op einde:</strong> ${resterend}%</p>`;
+
       document.getElementById('result').innerHTML = output;
+      document.getElementById("result").style.display = "block";
 
       drawRoute(startCoords, endCoords);
       fetchWindDataStartEnd(startCoords, endCoords);
@@ -144,15 +131,11 @@ async function drawRoute(startCoords, endCoords) {
   }
 }
 
-function getFiveCoordinates(routeCoords) {
-  a = 20;
-  if (routeCoords.length <= a) return routeCoords;
-  const step = Math.floor(routeCoords.length / a);
-  let selectedCoords = [];
-  for (let i = 0; i < a; i++) {
-    selectedCoords.push(routeCoords[i * step]);
-  }
-  return selectedCoords;
+function getTwentyCoordinates(routeCoords) {
+  const count = 20;
+  if (routeCoords.length <= count) return routeCoords;
+  const step = Math.floor(routeCoords.length / count);
+  return Array.from({ length: count }, (_, i) => routeCoords[i * step]);
 }
 
 async function fetchWindDataPerCoord(lat, lon) {
@@ -192,6 +175,17 @@ async function fetchWindDataStartEnd(startCoords, endCoords) {
   }
 }
 
+async function fetchElevation(lat, lon) {
+  try {
+    const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
+    const data = await response.json();
+    return data.elevation;
+  } catch (error) {
+    console.error("Fout bij ophalen hoogtemeters:", error);
+    return null;
+  }
+}
+
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -202,32 +196,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
-}
-
-function EnqueteInvullen() {
-  fetch('feedback_form.php')
-    .then(response => response.text())
-    .then(data => {
-      document.getElementById('feedback-container').innerHTML = data;
-    })
-    .catch(error => {
-      console.error("Er is een fout opgetreden bij het ophalen van het formulier.", error);
-    });
-}
-
-function logout() {
-  header("Location: index.html");
-}
-
-async function fetchElevation(lat, lon) {
-  try {
-    const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
-    const data = await response.json();
-    return data.elevation;
-  } catch (error) {
-    console.error("Fout bij ophalen hoogtemeters:", error);
-    return null;
-  }
 }
 
 function berekenBatterijVerbruik({
@@ -244,46 +212,30 @@ function berekenBatterijVerbruik({
   modus = "eco"
 }) {
   const g = 9.81;
-
-  // Snelheden omrekenen naar m/s
   const snelheid_ms = snelheid_kmh / 3.6;
   const windsnelheid_ms = windsnelheid_kmh / 3.6;
   const v_rel = snelheid_ms + windsnelheid_ms;
 
-  // Krachten
   const F_lucht = 0.5 * luchtdichtheid * Cd * A * v_rel * v_rel;
   const F_rol = Crr * massa_kg * g;
   const F_helling = massa_kg * g * (hoogte_m / afstand_m);
-
-  // Totale arbeid in Joule en omzetten naar Wh
   const F_totaal = F_lucht + F_rol + F_helling;
+
   const energie_J = F_totaal * afstand_m;
   const energie_Wh = energie_J / 3600;
 
-  // Realistische verbruikfactoren per modus
   const verbruikFactoren = {
-    eco:   1.0,
-    tour:  1.2,
+    eco: 1.0,
+    tour: 1.2,
     sport: 1.5,
     turbo: 2.0
   };
-  const factor = verbruikFactoren[modus];
-
-  // Aangepast energieverbruik
+  const factor = verbruikFactoren[modus] || 1.0;
   const energie_adj_Wh = energie_Wh * factor;
-
-  // Percentage batterijverbruik
   const verbruik_pct = (energie_adj_Wh / batterij_Wh) * 100;
 
   return {
-    modus,
-    factor: factor,
-    F_lucht:     F_lucht.toFixed(2) + " N",
-    F_rol:       F_rol.toFixed(2) + " N",
-    F_helling:   F_helling.toFixed(2) + " N",
-    energie_Wh:      energie_Wh.toFixed(2) + " Wh",
-    energie_adj_Wh:  energie_adj_Wh.toFixed(2) + " Wh",
-    verbruik_pct:    verbruik_pct.toFixed(2) + "%"
+    verbruik_pct: verbruik_pct.toFixed(2)
   };
 }
 
