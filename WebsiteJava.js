@@ -34,19 +34,17 @@ async function getRouteAndFiveCoordinates(event) {
         const nextLat = nextCoord[1];
         const nextLon = nextCoord[0];
 
-        const afstand_m = calculateDistance(lat, lon, nextLat, nextLon) * 1000;
-
-        const elevation = await fetchElevation(lat, lon);
-        const nextElevation = await fetchElevation(nextLat, nextLon);
-        const hoogte_m = nextElevation !== null && elevation !== null ? nextElevation - elevation : 0;
-
+        const afstand_km = calculateDistance(lat, lon, nextLat, nextLon);
+        const hoogte_start_m = await fetchElevation(lat, lon) ?? 0;
+        const hoogte_eind_m = await fetchElevation(nextLat, nextLon) ?? 0;
         const windData = await fetchWindDataPerCoord(lat, lon);
 
         const batterijData = berekenBatterijVerbruik({
-          afstand_m: afstand_m,
+          afstand_km: afstand_km,
           snelheid_kmh: 20,
           massa_kg: 85,
-          hoogte_m: hoogte_m,
+          hoogte_start_m: hoogte_start_m,
+          hoogte_eind_m: hoogte_eind_m,
           batterij_Wh: 750,
           windsnelheid_kmh: windData ? windData.windSpeed : 0,
           modus: document.getElementById("modus").value.trim()
@@ -198,44 +196,58 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// Nieuwe batterij verbruik functie zoals gevraagd:
 function berekenBatterijVerbruik({
-  afstand_m,
+  afstand_km,
   snelheid_kmh,
   massa_kg,
-  hoogte_m,
+  hoogte_start_m,
+  hoogte_eind_m,
   batterij_Wh,
   Cd = 1.0,
-  A = 0.5,
-  Crr = 0.005,
+  A = 0.6, // aangepast frontaal oppervlak
+  Crr = 0.007, // verhoogde rolweerstand
   luchtdichtheid = 1.225,
   windsnelheid_kmh = 0,
   modus = "eco"
 }) {
   const g = 9.81;
+
+  const afstand_m = afstand_km * 1000;
   const snelheid_ms = snelheid_kmh / 3.6;
   const windsnelheid_ms = windsnelheid_kmh / 3.6;
-  const v_rel = snelheid_ms + windsnelheid_ms;
+  const v_rel = Math.max(snelheid_ms - windsnelheid_ms, 0);
 
-  const F_lucht = 0.5 * luchtdichtheid * Cd * A * v_rel * v_rel;
+  const delta_h = hoogte_eind_m - hoogte_start_m;
+  const slope = delta_h / afstand_m;
+
+  const F_lucht = 0.5 * luchtdichtheid * Cd * A * Math.pow(v_rel, 2);
   const F_rol = Crr * massa_kg * g;
-  const F_helling = massa_kg * g * (hoogte_m / afstand_m);
-  const F_totaal = F_lucht + F_rol + F_helling;
+  const F_helling = massa_kg * g * slope;
+  const F_totaal = F_lucht + F_rol + Math.max(F_helling, 0);
 
   const energie_J = F_totaal * afstand_m;
   const energie_Wh = energie_J / 3600;
 
-  const verbruikFactoren = {
-    eco: 1.0,
-    tour: 1.2,
-    sport: 1.5,
-    turbo: 2.0
+  const efficiënties = {
+    eco: 0.40,
+    tour: 0.50,
+    sport: 0.58,
+    turbo: 0.67
   };
-  const factor = verbruikFactoren[modus] || 1.0;
-  const energie_adj_Wh = energie_Wh * factor;
-  const verbruik_pct = (energie_adj_Wh / batterij_Wh) * 100;
+
+  const eta = efficiënties[modus.toLowerCase()] ?? 0.50;
+
+  const verbruik_pct = (energie_Wh / (batterij_Wh * eta)) * 100;
 
   return {
-    verbruik_pct: verbruik_pct.toFixed(2)
+    modus,
+    efficiëntie: eta,
+    F_lucht: +F_lucht.toFixed(2),
+    F_rol: +F_rol.toFixed(2),
+    F_helling: +F_helling.toFixed(2),
+    energie_Wh: +energie_Wh.toFixed(2),
+    verbruik_pct: +verbruik_pct.toFixed(2)
   };
 }
 
