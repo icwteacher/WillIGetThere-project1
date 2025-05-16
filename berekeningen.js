@@ -1,59 +1,62 @@
 function berekenBatterijVerbruik({
-  afstand_m,
+  afstand_km,
   snelheid_kmh,
   massa_kg,
-  hoogte_m,
+  hoogte_start_m,
+  hoogte_eind_m,
   batterij_Wh,
   Cd = 1.0,
-  A = 0.5,
-  Crr = 0.005,
+  A = 0.6, // aangepaste frontaal oppervlak
+  Crr = 0.007, // verhoogde rolweerstand
   luchtdichtheid = 1.225,
   windsnelheid_kmh = 0,
   modus = "eco"
 }) {
+  // Constantes
   const g = 9.81;
 
-  // Snelheden omrekenen naar m/s
+  // Unit-conversies
+  const afstand_m = afstand_km * 1000;
   const snelheid_ms = snelheid_kmh / 3.6;
   const windsnelheid_ms = windsnelheid_kmh / 3.6;
-  const v_rel = snelheid_ms + windsnelheid_ms;
+  const v_rel = Math.max(snelheid_ms - windsnelheid_ms, 0);
+
+  // Hoogteverschil en helling
+  const delta_h = hoogte_eind_m - hoogte_start_m;
+  const slope = delta_h / afstand_m;
 
   // Krachten
-  const F_lucht = 0.5 * luchtdichtheid * Cd * A * v_rel * v_rel;
+  const F_lucht = 0.5 * luchtdichtheid * Cd * A * Math.pow(v_rel, 2);
   const F_rol = Crr * massa_kg * g;
-  const F_helling = massa_kg * g * (hoogte_m / afstand_m);
+  const F_helling = massa_kg * g * slope;
+  const F_totaal = F_lucht + F_rol + Math.max(F_helling, 0); // afdaling telt niet mee
 
-  // Totale arbeid in Joule en omzetten naar Wh
-  const F_totaal = F_lucht + F_rol + F_helling;
+  // Energie in Joule en Wh
   const energie_J = F_totaal * afstand_m;
   const energie_Wh = energie_J / 3600;
 
-  // Realistische verbruikfactoren per modus
-  const verbruikFactoren = {
-    eco:   1.0,
-    tour:  1.2,
-    sport: 1.5,
-    turbo: 2.0
+  // Geoptimaliseerde efficiënties (afgeleid uit april 2025 dataset)
+  const efficiënties = {
+    eco: 0.40,
+    tour: 0.50,
+    sport: 0.58,
+    turbo: 0.67
   };
-  const factor = verbruikFactoren[modus] ?? verbruikFactoren.tour;
 
-  // Aangepast energieverbruik
-  const energie_adj_Wh = energie_Wh * factor;
+  const eta = efficiënties[modus.toLowerCase()] ?? 0.50;
 
-  // Percentage batterijverbruik
-  const verbruik_pct = (energie_adj_Wh / batterij_Wh) * 100;
+  // Verbruik in % van batterijcapaciteit
+  const verbruik_pct = (energie_Wh / (batterij_Wh * eta)) * 100;
 
   return {
     modus,
-    factor: factor,
-    F_lucht:     F_lucht.toFixed(2) + " N",
-    F_rol:       F_rol.toFixed(2) + " N",
-    F_helling:   F_helling.toFixed(2) + " N",
-    energie_Wh:      energie_Wh.toFixed(2) + " Wh",
-    energie_adj_Wh:  energie_adj_Wh.toFixed(2) + " Wh",
-    verbruik_pct:    verbruik_pct.toFixed(2) + "%"
+    efficiëntie: eta,
+    F_lucht: +F_lucht.toFixed(2),
+    F_rol: +F_rol.toFixed(2),
+    F_helling: +F_helling.toFixed(2),
+    energie_Wh: +energie_Wh.toFixed(2),
+    verbruik_pct: +verbruik_pct.toFixed(2)
   };
 }
 
-// Exporteer de functie naar window zodat je 'm kunt gebruiken zonder modules
-window.berekenBatterijVerbruik = berekenBatterijVerbruik;
+export { berekenBatterijVerbruik };
