@@ -16,40 +16,29 @@ $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'Gast';
 <body>
   <div class="hoofding">
     <img src="logo.jpg" alt="Sila Westerlo logo" class="logo">
-    <div class="titel"><h1>Kan je batterij het aan?</h1></div>
+    <div class="titel"><h1>Kan je batterij het aan?</h1></div><br>
     <div style="position: absolute; top: 15px; right: 120px; color: white; font-weight: bold;"><br>
       <?php echo htmlspecialchars($gebruikersnaam); ?>
     </div>
-    <form action="uitloggen.php" method="post">
-      <button class="uitloggen">Uitloggen</button>
+    </div>
+    <form action="uitloggen.php" method="post" onsubmit="getRouteAndFiveCoordinates()">
+      <button class="uitloggen" class="formulier">Uitloggen</button>
     </form>
   </div>
-
-  <!-- HOOFD FORMULIER -->
   <form onsubmit="return getRouteAndFiveCoordinates(event)">
-    <div class="container">
-      <div class="image-container">
-        <div id="map"></div>
-      </div>
 
-      <div class="text-container">
-        <!-- batterij en instellingen -->
-        <div class="input-row">
-          <div class="input-group">
-            <label for="batterijProcent">Batterij bij vertrek (%):<sup>*</sup></label> 
-            <input type="number" id="batterijProcent" min="0" max="100" required>
-          </div>
-          <div class="input-group">
-            <label for="batterijCap">Batterijcapaciteit (Wh):<sup>*</sup></label>
-            <input type="number" id="batterijCap" value="750" required>
-          </div>
-          <div class="input-group">
-            <label for="massa">Totaalgewicht (kg):<sup>*</sup></label>
-            <input type="number" id="massa" value="100" required>
-          </div>
-          <div class="input-group">
+  <div class="container">
+    <div class="image-container">
+      <div id="map"></div>
+    </div>
+    <div class="text-container">
+    <div class="input-row">
+      <div class="input-group">
+        <label for="batterijProcent">Batterij bij vertrek (in %):<sup>*</sup></label> 
+        <input type="number" name="batterijProcent" id="batterijProcent" min="0" max="100" required>
+      </div><div class="input-group">
             <label for="modus">Modus:<sup>*</sup></label>
-            <select id="modus" required>
+            <select name="modus" id="modus" required>
               <option value="">-- Kies modus --</option>
               <option value="eco">Eco</option>
               <option value="tour">Tour</option>
@@ -58,53 +47,52 @@ $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'Gast';
             </select>
           </div>
         </div><br>
-
-        <!-- locatie input -->
-        <div class="input-row">
-          <div class="input-group">
-            <label for="gemeenteStart">Gemeente bij vertrek:<sup>*</sup></label>
-            <input type="text" id="gemeenteStart" required>
-          </div>
-          <div class="input-group">
-            <label for="straatStart">Straat bij vertrek:</label>
-            <input type="text" id="straatStart">
-          </div>
-        </div><br>
-
-        <div class="input-row">
-          <div class="input-group">
-            <label for="gemeenteEinde">Gemeente bij aankomst:<sup>*</sup></label>
-            <input type="text" id="gemeenteEinde" required>
-          </div>
-          <div class="input-group">
-            <label for="straatEinde">Straat bij aankomst:</label>
-            <input type="text" id="straatEinde">
-          </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label for="gemeenteStart">Gemeente bij vertrek:<sup>*</sup></label>
+          <input type="text" id="gemeenteStart" required>
         </div>
+        <div class="input-group">
+          <label for="straatStart">Straat bij vertrek:</label>
+          <input type="text" id="straatStart">
+        </div>
+      </div><br>
 
-        <p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
-        <br><br>
-
-        <input type="submit" value="Bereken de gegevens" class="formulier">
-
-        <div id="windResult" class="result" style="display: none;"></div>
-        <br><br>
-        <div id="result" class="result" style="display: none;"></div>
+      <div class="input-row">
+        <div class="input-group">
+          <label for="gemeenteEinde">Gemeente bij aankomst:<sup>*</sup></label>
+          <input type="text" id="gemeenteEinde" required>
+        </div>
+        <div class="input-group">
+          <label for="straatEinde">Straat bij aankomst:</label>
+          <input type="text" id="straatEinde">
+        </div>
       </div>
+      <p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
+      <br><br>
+
+      <input type="submit" value="Bereken de gegevens" class="formulier">
+
+      <div id="windResult" class="result" style="display: none;"></div>
+      <br><br><br>
+      <div id="result" class="result" style="display: none;"></div>
+      
     </div>
-  </form>
+    </form>
+  </div>
 
   <br><br>
   <div class="feedback-row">
     <label>Ben je aangekomen? Geef je feedback!</label>
-    <button onclick="window.location.href='feedback_form.php'" class="feedback" type="button">Feedback</button>
-  </div><br><br>
+    <button onclick="window.location.href='feedback_form.php'" class="feedback" type="button">
+  Feedback
+</button>
 
+  </div><br><br>
   <div id="feedback-container"></div>
 
-  <!-- SCRIPTS -->
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="berekeningen.js"></script>
   <script src="WebsiteJava.js" defer></script>
 </body>
 </html>
