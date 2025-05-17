@@ -6,6 +6,7 @@ let routeLayer;
 
 async function getRouteAndFiveCoordinates(event) {
   event.preventDefault();
+
   const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
   const straatStart = document.getElementById("straatStart").value.trim();
   const gemeenteEnd = document.getElementById("gemeenteEinde").value.trim();
@@ -56,6 +57,24 @@ async function getRouteAndFiveCoordinates(event) {
       const batterijProcent = parseFloat(document.getElementById("batterijProcent").value.trim());
       const totaalVerbruiktProcent = totaalVerbruikPct.toFixed(2);
       const resterend = (batterijProcent - totaalVerbruiktProcent).toFixed(2);
+      const speling = (batterijProcent - resterend - totaalVerbruiktProcent).toFixed(2);
+
+const formData = new FormData();
+formData.append("waarde", resterend);
+formData.append("speling", speling);
+
+fetch("Opslaan_batterij.php", {
+  method: "POST",
+  body: formData
+})
+  .then(response => response.text())
+  .then(data => {
+    console.log("Batterijdata opgeslagen:", data);
+  })
+  .catch(error => {
+    console.error("Fout bij opslaan batterijdata:", error);
+  });
+
 
       const output = `<p><strong>Totaal batterijverbruik over route:</strong> ${totaalVerbruiktProcent}%</p>
                       <p><strong>Batterij op einde:</strong> ${resterend}%</p>`;
