@@ -3,10 +3,22 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 let routeLayer;
+async function haalCorrectieFactorOp() {
+  try {
+    const response = await fetch("getLaatsteSpeling.php");
+    const data = await response.json();
+    if (data.speling !== undefined) {
+      const speling = parseFloat(data.speling);
+      return 1 + (speling / 100);
+    }
+  } catch (error) {
+    console.warn("Kon speling niet ophalen:", error);
+  }
+  return 1; // fallback als het mislukt
+}
 
 async function getRouteAndFiveCoordinates(event) {
   event.preventDefault();
-
   const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
   const straatStart = document.getElementById("straatStart").value.trim();
   const gemeenteEnd = document.getElementById("gemeenteEinde").value.trim();
@@ -40,28 +52,27 @@ async function getRouteAndFiveCoordinates(event) {
         const hoogte_eind_m = await fetchElevation(nextLat, nextLon) ?? 0;
         const windData = await fetchWindDataPerCoord(lat, lon);
 
-        const batterijData = berekenBatterijVerbruik({
-          afstand_km: afstand_km,
-          snelheid_kmh: 20,
-          massa_kg: 85,
-          hoogte_start_m: hoogte_start_m,
-          hoogte_eind_m: hoogte_eind_m,
-          batterij_Wh: 750,
-          windsnelheid_kmh: windData ? windData.windSpeed : 0,
-          modus: document.getElementById("modus").value.trim()
-        });
-
+        const correctieFactor = await haalCorrectieFactorOp();
+const batterijData = berekenBatterijVerbruik({
+  afstand_km: afstand_km,
+  snelheid_kmh: 20,
+  massa_kg: 85,
+  hoogte_start_m: hoogte_start_m,
+  hoogte_eind_m: hoogte_eind_m,
+  batterij_Wh: 750,
+  windsnelheid_kmh: windData ? windData.windSpeed : 0,
+  modus: document.getElementById("modus").value.trim(),
+  correctieFactor: correctieFactor 
+});
         totaalVerbruikPct += parseFloat(batterijData.verbruik_pct);
       }
 
       const batterijProcent = parseFloat(document.getElementById("batterijProcent").value.trim());
       const totaalVerbruiktProcent = totaalVerbruikPct.toFixed(2);
       const resterend = (batterijProcent - totaalVerbruiktProcent).toFixed(2);
-      const speling = (batterijProcent - resterend - totaalVerbruiktProcent).toFixed(2);
 
 const formData = new FormData();
 formData.append("waarde", resterend);
-formData.append("speling", speling);
 
 fetch("Opslaan_batterij.php", {
   method: "POST",
@@ -183,8 +194,6 @@ async function fetchWindDataStartEnd(startCoords, endCoords) {
     document.getElementById("windResult").innerHTML =
       `<p><strong>Startlocatie:</strong> ${startCoords.display_name}</p>
        <p><strong>Eindlocatie:</strong> ${endCoords.display_name}</p>
-       <p><strong>Windsnelheid (startlocatie):</strong> ${windSpeed} km/h</p>
-       <p><strong>Windrichting (startlocatie):</strong> ${windDirection}°</p>
        <p><strong>Afstand tussen start en eind:</strong> ${totalDistance.toFixed(2)} km</p>`;
     document.getElementById("windResult").style.display = "block";
   } catch (error) {
@@ -228,7 +237,8 @@ function berekenBatterijVerbruik({
   Crr = 0.007, // verhoogde rolweerstand
   luchtdichtheid = 1.225,
   windsnelheid_kmh = 0,
-  modus = "eco"
+  modus = "eco",
+  correctieFactor = 1 // standaardwaarde is 1 = geen correctie
 }) {
   const g = 9.81;
 
@@ -249,15 +259,14 @@ function berekenBatterijVerbruik({
   const energie_Wh = energie_J / 3600;
 
   const efficiënties = {
-    eco: 0.40,
-    tour: 0.50,
-    sport: 0.58,
-    turbo: 0.67
+  eco: 0.90,    // hoogste efficiëntie
+  tour: 0.75,
+  sport: 0.60,
+  turbo: 0.45
   };
 
-  const eta = efficiënties[modus.toLowerCase()] ?? 0.50;
-
-  const verbruik_pct = (energie_Wh / (batterij_Wh * eta)) * 100;
+  const eta = efficiënties[modus.toLowerCase()];
+  const verbruik_pct = (energie_Wh / (batterij_Wh * eta)) * 100 * correctieFactor;
 
   return {
     modus,
