@@ -1,7 +1,7 @@
 <?php
 session_start();
 $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'Gast';
-
+$resterendeBatterij = $_POST["getal"] ?? null;
 // Probeer batterijOpEinde op te halen uit XML
 $batterijWaarde = '';
 $xmlBestand = 'gebruikers.xml';
@@ -14,7 +14,7 @@ if (file_exists($xmlBestand)) {
         if ($gebruiker->getAttribute('naam') === $gebruikersnaam) {
             $batt = $gebruiker->getElementsByTagName('batterijOpEinde');
             if ($batt->length > 0) {
-                $batterijWaarde = htmlspecialchars($batt->item(0)->nodeValue);
+                $batterijWaarde = htmlspecialchars($batt->item($batt->length - 1)->nodeValue);
             }
             break;
         }
@@ -42,8 +42,7 @@ if (file_exists($xmlBestand)) {
 
   <form style="margin:20px;" action="verwerk_feedback.php" method="post">
     <label for="batterij">Batterij op einde (in %):<sup>*</sup></label>
-    <input type="number" id="batterij" name="batterij" min="0" max="100" required
-           value="<?php echo $batterijWaarde; ?>"><br><br>
+    <input type="number" step="0.01" id="batterij" name="batterij" min="0" max="100" required><br><br>
 
     <label>Ben je tevreden?<sup>*</sup></label>
     <select name="tevredenheid" required>

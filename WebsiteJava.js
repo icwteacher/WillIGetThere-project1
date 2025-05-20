@@ -3,22 +3,10 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 let routeLayer;
-async function haalCorrectieFactorOp() {
-  try {
-    const response = await fetch("getLaatsteSpeling.php");
-    const data = await response.json();
-    if (data.speling !== undefined) {
-      const speling = parseFloat(data.speling);
-      return 1 + (speling / 100);
-    }
-  } catch (error) {
-    console.warn("Kon speling niet ophalen:", error);
-  }
-  return 1; // fallback als het mislukt
-}
 
 async function getRouteAndFiveCoordinates(event) {
   event.preventDefault();
+
   const gemeenteStart = document.getElementById("gemeenteStart").value.trim();
   const straatStart = document.getElementById("straatStart").value.trim();
   const gemeenteEnd = document.getElementById("gemeenteEinde").value.trim();
@@ -52,27 +40,34 @@ async function getRouteAndFiveCoordinates(event) {
         const hoogte_eind_m = await fetchElevation(nextLat, nextLon) ?? 0;
         const windData = await fetchWindDataPerCoord(lat, lon);
 
-        const correctieFactor = await haalCorrectieFactorOp();
-const batterijData = berekenBatterijVerbruik({
-  afstand_km: afstand_km,
-  snelheid_kmh: 20,
-  massa_kg: 85,
-  hoogte_start_m: hoogte_start_m,
-  hoogte_eind_m: hoogte_eind_m,
-  batterij_Wh: 750,
-  windsnelheid_kmh: windData ? windData.windSpeed : 0,
-  modus: document.getElementById("modus").value.trim(),
-  correctieFactor: correctieFactor 
-});
+        const batterijData = berekenBatterijVerbruik({
+          afstand_km: afstand_km,
+          snelheid_kmh: 20,
+          massa_kg: 85,
+          hoogte_start_m: hoogte_start_m,
+          hoogte_eind_m: hoogte_eind_m,
+          batterij_Wh: 750,
+          windsnelheid_kmh: windData ? windData.windSpeed : 0,
+          modus: document.getElementById("modus").value.trim()
+        });
+
         totaalVerbruikPct += parseFloat(batterijData.verbruik_pct);
       }
 
       const batterijProcent = parseFloat(document.getElementById("batterijProcent").value.trim());
-      const totaalVerbruiktProcent = totaalVerbruikPct.toFixed(2);
-      const resterend = (batterijProcent - totaalVerbruiktProcent).toFixed(2);
+      const totaalVerbruiktProcent = totaalVerbruikPct;
+      const resterend = parseFloat(batterijProcent - totaalVerbruiktProcent);
+      const gecorrigeerdeBias = await fetchLaatsteSpeling(); // wordt bv. 0.92 of 1.08 (gemiddelde ratio)
+      const gecorrigeerdResterend = (resterend * gecorrigeerdeBias).toFixed(2); // ✅ correcte toepassing
+      const verbruikteProcent = (batterijProcent - gecorrigeerdResterend).toFixed(2);
+
+
+
+
+
 
 const formData = new FormData();
-formData.append("waarde", resterend);
+formData.append("waarde", gecorrigeerdResterend);
 
 fetch("Opslaan_batterij.php", {
   method: "POST",
@@ -87,11 +82,17 @@ fetch("Opslaan_batterij.php", {
   });
 
 
-      const output = `<p><strong>Totaal batterijverbruik over route:</strong> ${totaalVerbruiktProcent}%</p>
-                      <p><strong>Batterij op einde:</strong> ${resterend}%</p>`;
+const spelingWaarde = gecorrigeerdeBias.toFixed(2);
 
-      document.getElementById('result').innerHTML = output;
-      document.getElementById("result").style.display = "block";
+const output = `<p><strong>Totaal batterijverbruik over route:</strong> ${verbruikteProcent}%</p>
+                <p><strong>Batterij op einde:</strong> ${gecorrigeerdResterend}%</p>`;
+                //<p><strong>Batterij op einde:</strong> ${resterend}%</p>
+                //<p><strong>Laatste Speling:</strong> ${spelingWaarde}%</p>
+                //<p><strong>Correctiefactor op basis van feedback:</strong> ×${gecorrigeerdeBias.toFixed(3)}</p>
+
+// Verwijder de dubbele innerHTML update hieronder (hou er 1)
+document.getElementById('result').innerHTML = output;
+document.getElementById("result").style.display = "block";
 
       drawRoute(startCoords, endCoords);
       fetchWindDataStartEnd(startCoords, endCoords);
@@ -224,6 +225,21 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+async function fetchLaatsteSpeling() {
+  try {
+    
+    const response = await fetch(`haal_speling.php?gebruiker=${encodeURIComponent(gebruiker)}&type=gemiddelde`);
+    if (!response.ok) throw new Error("Speling ophalen mislukt");
+    const data = await response.text();
+    return parseFloat(data) || 1;
+  } catch (e) {
+    console.error("Fout bij speling:", e);
+    return 0;
+  }
+}
+
+
+
 // Nieuwe batterij verbruik functie zoals gevraagd:
 function berekenBatterijVerbruik({
   afstand_km,
@@ -237,8 +253,7 @@ function berekenBatterijVerbruik({
   Crr = 0.007, // verhoogde rolweerstand
   luchtdichtheid = 1.225,
   windsnelheid_kmh = 0,
-  modus = "eco",
-  correctieFactor = 1 // standaardwaarde is 1 = geen correctie
+  modus = "eco"
 }) {
   const g = 9.81;
 
@@ -266,7 +281,8 @@ function berekenBatterijVerbruik({
   };
 
   const eta = efficiënties[modus.toLowerCase()];
-  const verbruik_pct = (energie_Wh / (batterij_Wh * eta)) * 100 * correctieFactor;
+
+  const verbruik_pct = (energie_Wh / (batterij_Wh * eta)) * 100;
 
   return {
     modus,

@@ -3,9 +3,8 @@ session_start();
 $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'onbekend';
 
 $batterijOpEinde = $_POST["waarde"] ?? null;
-$speling = $_POST["speling"] ?? null;
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && $batterijOpEinde !== null && $speling !== null) {
+if ($_SERVER["REQUEST_METHOD"] === "POST" && $batterijOpEinde !== null) {
     $bestand = 'gebruikers.xml';
 
     // Laad of maak XML
@@ -32,7 +31,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $batterijOpEinde !== null && $speli
 
     // Voeg batterijgegevens toe
     $gebruiker->addChild('batterijOpEinde', $batterijOpEinde);
-    $gebruiker->addChild('speling', $speling);
 
     // Opslaan
     $xml->asXML($bestand);

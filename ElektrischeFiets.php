@@ -11,9 +11,14 @@ $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'Gast';
   <link rel="icon" type="image/x-jpg" href="logo.jpg">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css">
+  <script>
+  const gebruiker = <?php echo json_encode($gebruikersnaam); ?>;
+</script>
+
 </head>
 
 <body>
+
   <div class="hoofding">
     <img src="logo.jpg" alt="Sila Westerlo logo" class="logo">
     <div class="titel"><h1>Kan je batterij het aan?</h1></div><br>
@@ -21,7 +26,7 @@ $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'Gast';
       <?php echo htmlspecialchars($gebruikersnaam); ?>
     </div>
     </div>
-    <form action="uitloggen.php" method="post" onsubmit="getRouteAndFiveCoordinates()">
+    <form action="uitloggen.php" method="post">
       <button class="uitloggen" class="formulier">Uitloggen</button>
     </form>
   </div>
@@ -35,7 +40,7 @@ $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'Gast';
     <div class="input-row">
       <div class="input-group">
         <label for="batterijProcent">Batterij bij vertrek (in %):<sup>*</sup></label> 
-        <input type="number" name="batterijProcent" id="batterijProcent" min="0" max="100" required>
+        <input type="number" step="0.01" name="batterijProcent" id="batterijProcent" min="0" max="100" required>
       </div><div class="input-group">
             <label for="modus">Modus:<sup>*</sup></label>
             <select name="modus" id="modus" required>
@@ -68,20 +73,16 @@ $gebruikersnaam = $_SESSION['gebruikersnaam'] ?? 'Gast';
           <input type="text" id="straatEinde">
         </div>
       </div>
-      <p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
-      <br><br>
-
       <input type="submit" value="Bereken de gegevens" class="formulier">
-
-      <div id="windResult" class="result" style="display: none;"></div>
-      <br><br><br>
-      <div id="result" class="result" style="display: none;"></div>
+<p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
+      
       
     </div>
     </form>
   </div>
+  <div id="windResult" class="result" style="display: none;"></div>
+  <div id="result" class="result" style="display: none;"></div>
 
-  <br><br>
   <div class="feedback-row">
     <label>Ben je aangekomen? Geef je feedback!</label>
     <button onclick="window.location.href='feedback_form.php'" class="feedback" type="button">
