@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
@@ -12,16 +12,25 @@
       const herhaalWachtwoord = document.getElementById('herhaalWachtwoord');
       const herhaalLabel = document.getElementById('herhaalLabel');
 
+      const naam = document.getElementById('naam');
+      const email = document.getElementById('email');
+
       if (actie === 'registreren') {
         registratieVelden.classList.remove('hidden');
         herhaalWachtwoord.classList.remove('hidden');
         herhaalLabel.classList.remove('hidden');
-        herhaalWachtwoord.required = true;
+
+        naam.disabled = false;
+        email.disabled = false;
+        herhaalWachtwoord.disabled = false;
       } else {
         registratieVelden.classList.add('hidden');
         herhaalWachtwoord.classList.add('hidden');
         herhaalLabel.classList.add('hidden');
-        herhaalWachtwoord.required = false;
+
+        naam.disabled = true;
+        email.disabled = true;
+        herhaalWachtwoord.disabled = true;
       }
 
       document.getElementById('error-message').textContent = '';
@@ -71,12 +80,12 @@
     <div id="registratieVelden" class="hidden">
       <div class="input-row">
         <div class="input-group">
-          <label for="naam">Naam:</label>
-          <input type="text" id="naam" name="naam" width=40px>
+          <label for="naam">Naam:<sup>*</sup></label>
+          <input type="text" id="naam" name="naam" required disabled>
         </div>
         <div class="input-group">
-          <label for="email">E-mail:</label>
-          <input type="email" id="email" name="email">
+          <label for="email">E-mail:<sup>*</sup></label>
+          <input type="email" id="email" name="email" required disabled>
         </div>
       </div><br>
       <div class="input-row">
@@ -86,21 +95,20 @@
         </div>
       </div>
     </div>
-    
 
-    <label for="gebruikersnaam">Gebruikersnaam:</label><br>
+    <label for="gebruikersnaam">Gebruikersnaam:<sup>*</sup></label><br>
     <input type="text" id="gebruikersnaam" name="gebruikersnaam" required><br><br>
 
-    <label for="wachtwoord">Wachtwoord:</label><br>
+    <label for="wachtwoord">Wachtwoord:<sup>*</sup></label><br>
     <input type="password" id="wachtwoord" name="wachtwoord" required><br><br>
 
-    <label for="herhaalWachtwoord" id="herhaalLabel" class="hidden">Herhaal wachtwoord:</label><br>
-    <input type="password" id="herhaalWachtwoord" class="hidden"><br><br>
+    <label for="herhaalWachtwoord" id="herhaalLabel" class="hidden">Herhaal wachtwoord:<sup>*</sup></label><br>
+    <input type="password" id="herhaalWachtwoord" name="herhaalWachtwoord" class="hidden" required disabled><br><br>
 
     <span id="error-message"></span><br>
 
     <button type="submit">Verzenden</button>
-    
+    <p class="requiredfield"><sup>*</sup> Deze velden zijn verplicht!</p>
   </form>
 </body>
 </html>
