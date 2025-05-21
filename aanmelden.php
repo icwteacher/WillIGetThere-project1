@@ -52,7 +52,9 @@ if ($actie === 'inloggen') {
         $dom->loadXML($xml->asXML());
         $dom->save($bestand);
 
-        $bericht = "Registratie succesvol! Je kunt nu inloggen.";
+        header("Location: index.html?gebruikersnaam=" . urlencode($gebruikersnaam));
+exit;
+
     }
 } else {
     $bericht = "Ongeldige actie.";
