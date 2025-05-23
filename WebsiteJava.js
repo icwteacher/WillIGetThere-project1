@@ -240,7 +240,7 @@ async function fetchLaatsteSpeling() {
     return parseFloat(data) || 1;
   } catch (e) {
     console.error("Fout bij speling:", e);
-    return 0;
+    return ;
   }
 }
 
@@ -304,6 +304,4 @@ function berekenBatterijVerbruik({
 
 
 window.berekenBatterijVerbruik = berekenBatterijVerbruik;
-
-
 
