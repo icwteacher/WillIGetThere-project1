@@ -35,8 +35,11 @@ if (empty($spelingen)) {
 
 if ($type === 'gemiddelde') {
     $gemiddelde = array_sum($spelingen) / count($spelingen);
-    echo round($gemiddelde, 2);
+    $geclamped = max(0.5, min(1.5, $gemiddelde)); // ✅ begrens tussen 0.5 en 1.5
+    echo round($geclamped, 2);
 } else {
-    echo end($spelingen); // laatste speling
+    $laatste = end($spelingen);
+    $geclamped = max(0.5, min(1.5, $laatste)); // ✅ ook hier begrens
+    echo round($geclamped, 2);
 }
 ?>
