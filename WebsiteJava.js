@@ -83,6 +83,7 @@ fetch("Opslaan_batterij.php", {
 
 
 const spelingWaarde = gecorrigeerdeBias.toFixed(2);
+
 let waarschuwing = "";
 if (gecorrigeerdResterend < 15) {
   waarschuwing = `<p style="color: red;"><strong>Laad je batterij eerst op!</strong></p>`;
@@ -91,7 +92,6 @@ if (gecorrigeerdResterend < 15) {
 const output = `<p><strong>Totaal batterijverbruik over route:</strong> ${verbruikteProcent}%</p>
                 <p><strong>Batterij op einde:</strong> ${gecorrigeerdResterend}%</p>
                 ${waarschuwing}`;
-
                 //<p><strong>Batterij op einde:</strong> ${resterend}%</p>
                 //<p><strong>Laatste Speling:</strong> ${spelingWaarde}%</p>
                 //<p><strong>Correctiefactor op basis van feedback:</strong> ×${gecorrigeerdeBias.toFixed(3)}</p>
@@ -304,4 +304,6 @@ function berekenBatterijVerbruik({
 
 
 window.berekenBatterijVerbruik = berekenBatterijVerbruik;
+
+
 
