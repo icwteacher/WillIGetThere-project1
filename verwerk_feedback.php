@@ -63,38 +63,6 @@ $gebruikerNode->appendChild($feedback);
 
 // Opslaan
 $doc->save($xmlBestand);
+header("Location: ElektrischeFiets.php");
+exit;
 ?>
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Formulier ingevuld</title>
-  <link rel="icon" type="image/x-jpg" href="logo.jpg">
-  <link rel="stylesheet" href="style.css">
-  <script>
-  const gebruiker = <?php echo json_encode($gebruikersnaam); ?>;
-</script>
-
-</head>
-<body>
-  <div class="hoofding">
-    <img src="logo.jpg" alt="Sila Westerlo logo" class="logo">
-    <div class="titel"><h1>Formulier ingediend</h1></div><br>
-    <div style="position: absolute; top: 34px; right: 120px; color: white; font-weight: bold;">
-      <?php echo htmlspecialchars($gebruikersnaam); ?>
-    </div>
-  </div>
-  <div style="margin: 20px;">
-    <p>Bedankt! Feedback opgeslagen!</p>
-
-    <p><strong>Batterij op einde:</strong> <?php echo htmlspecialchars($batterijOpEindeWaarde); ?></p>
-    <p><strong>Feedback - Batterij:</strong> <?php echo htmlspecialchars($batterij); ?></p>
-    <p><strong>Speling:</strong> <?php echo htmlspecialchars($speling); ?></p>
-
-
-    <a href="ElektrischeFiets.php">Terug naar website</a>
-  </div>
-</body>
-</html>
-
