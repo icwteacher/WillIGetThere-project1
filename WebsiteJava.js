@@ -42,13 +42,13 @@ async function getRouteAndFiveCoordinates(event) {
 
         const batterijData = berekenBatterijVerbruik({
           afstand_km: afstand_km,
-          snelheid_kmh: 20,
-          massa_kg: 85,
           hoogte_start_m: hoogte_start_m,
           hoogte_eind_m: hoogte_eind_m,
           batterij_Wh: 750,
           windsnelheid_kmh: windData ? windData.windSpeed : 0,
-          modus: document.getElementById("modus").value.trim()
+          modus: document.getElementById("modus").value.trim(),
+          snelheid_kmh: 20, // default rijsnelheid
+          massa_kg: 100 
         });
 
         totaalVerbruikPct += parseFloat(batterijData.verbruik_pct);
@@ -83,9 +83,15 @@ fetch("Opslaan_batterij.php", {
 
 
 const spelingWaarde = gecorrigeerdeBias.toFixed(2);
+let waarschuwing = "";
+if (gecorrigeerdResterend < 15) {
+  waarschuwing = `<p style="color: red;"><strong>Laad je batterij eerst op!</strong></p>`;
+}
 
 const output = `<p><strong>Totaal batterijverbruik over route:</strong> ${verbruikteProcent}%</p>
-                <p><strong>Batterij op einde:</strong> ${gecorrigeerdResterend}%</p>`;
+                <p><strong>Batterij op einde:</strong> ${gecorrigeerdResterend}%</p>
+                ${waarschuwing}`;
+
                 //<p><strong>Batterij op einde:</strong> ${resterend}%</p>
                 //<p><strong>Laatste Speling:</strong> ${spelingWaarde}%</p>
                 //<p><strong>Correctiefactor op basis van feedback:</strong> ×${gecorrigeerdeBias.toFixed(3)}</p>
@@ -248,15 +254,16 @@ function berekenBatterijVerbruik({
   hoogte_start_m,
   hoogte_eind_m,
   batterij_Wh,
-  Cd = 1.0,
-  A = 0.6, // aangepast frontaal oppervlak
-  Crr = 0.007, // verhoogde rolweerstand
-  luchtdichtheid = 1.225,
   windsnelheid_kmh = 0,
   modus = "eco"
 }) {
   const g = 9.81;
+  const Cd = 1.0;
+  const A = 0.6; // aangepast frontaal oppervlak
+  const Crr = 0.007; // verhoogde rolweerstand
+  const luchtdichtheid = 1.225;
 
+  // ✅ gebruik de parameters zoals doorgegeven
   const afstand_m = afstand_km * 1000;
   const snelheid_ms = snelheid_kmh / 3.6;
   const windsnelheid_ms = windsnelheid_kmh / 3.6;
@@ -274,13 +281,13 @@ function berekenBatterijVerbruik({
   const energie_Wh = energie_J / 3600;
 
   const efficiënties = {
-  eco: 0.90,    // hoogste efficiëntie
-  tour: 0.75,
-  sport: 0.60,
-  turbo: 0.45
+    eco: 0.90,
+    tour: 0.75,
+    sport: 0.60,
+    turbo: 0.45
   };
 
-  const eta = efficiënties[modus.toLowerCase()];
+  const eta = efficiënties[modus.toLowerCase()] || 0.75;
 
   const verbruik_pct = (energie_Wh / (batterij_Wh * eta)) * 100;
 
@@ -295,4 +302,6 @@ function berekenBatterijVerbruik({
   };
 }
 
+
 window.berekenBatterijVerbruik = berekenBatterijVerbruik;
+
