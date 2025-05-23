@@ -50,14 +50,31 @@
     }
 
     function vulGebruikersnaamIn() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const gebruikersnaam = urlParams.get('gebruikersnaam');
-      if (gebruikersnaam) {
-        document.getElementById('gebruikersnaam').value = gebruikersnaam;
-        document.querySelector('input[value="inloggen"]').checked = true;
-        toggleForm();
-      }
-    }
+  const urlParams = new URLSearchParams(window.location.search);
+
+  const gebruikersnaam = urlParams.get('gebruikersnaam');
+  const naam = urlParams.get('naam');
+  const email = urlParams.get('email');
+  const telefoon = urlParams.get('telefoon');
+  const foutmelding = urlParams.get('fout');
+  const actie = urlParams.get('actie');
+  
+
+  if (actie === 'registreren') {
+    document.querySelector('input[value="registreren"]').checked = true;
+    toggleForm();
+  }
+
+  if (gebruikersnaam) document.getElementById('gebruikersnaam').value = gebruikersnaam;
+  if (naam) document.getElementById('naam').value = naam;
+  if (email) document.getElementById('email').value = email;
+  if (telefoon) document.getElementById('telefoon').value = telefoon;
+  if (foutmelding) {
+    document.getElementById('error-message').textContent = foutmelding;
+    document.getElementById('error-message').style.color = 'red';
+  }
+}
+
 
     window.onload = () => {
       toggleForm();
