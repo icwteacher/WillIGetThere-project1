@@ -32,13 +32,26 @@ if ($actie === 'inloggen') {
         $bericht = "Fout: gebruikersnaam of wachtwoord is onjuist.";
     }
 } elseif ($actie === 'registreren') {
-    if ($gevonden) {
-        $bericht = "Gebruikersnaam bestaat al!";
-    } else {
-        $naam = $_POST['naam'] ?? '';
-        $email = $_POST['email'] ?? '';
-        $telefoon = $_POST['telefoon'] ?? '';
+    // Eerst ophalen vóór controle op $gevonden
+    $naam = $_POST['naam'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $telefoon = $_POST['telefoon'] ?? '';
 
+    if ($gevonden) {
+        // Nu zijn naam, email, telefoon WEL beschikbaar
+        $query = http_build_query([
+            'fout' => 'Gebruikersnaam bestaat al!',
+            'actie' => 'registreren',
+            'naam' => $naam,
+            'email' => $email,
+            'telefoon' => $telefoon,
+            
+            'gebruikersnaam' => $gebruikersnaam
+        ]);
+        header("Location: index.html?$query");
+        exit;
+    } else {
+        // Registratie uitvoeren
         $gebruiker = $xml->addChild('gebruiker');
         $gebruiker->addChild('naam', $naam);
         $gebruiker->addChild('email', $email);
@@ -53,8 +66,7 @@ if ($actie === 'inloggen') {
         $dom->save($bestand);
 
         header("Location: index.html?gebruikersnaam=" . urlencode($gebruikersnaam));
-exit;
-
+        exit;
     }
 } else {
     $bericht = "Ongeldige actie.";
